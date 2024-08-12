@@ -402,4 +402,191 @@ where p.product_name='Laptop';
 select * from products;
 select * from Orders;
  
+ -------------------------------------------------
+ -- VIEWS    -> a virtual table , a table structure will be created, data will be taken from underlined base tabls   w3schools
+ -- datas r not stored in views
+ -- don't use alter query to alter views, instead OR REPLACE
  
+ create view myemp as select * from emp;
+ 
+ select * from myemp;
+ 
+drop view myemp;
+create or replace view myemp as select empno,ename,sal from emp;
+  select * from myemp;
+ desc myemp;
+ --------------------------------
+ -- Indexing : for faster retrieval of data
+
+ create index myindex on emp(ename,job);
+ alter table emp  drop index myindex;
+ 
+ -------------------------
+ -- PROCEDURES  -- PL -SQL
+ modes -- 3 modes --> IN , OUT , INOUT
+ DELIMITER//
+ BEGIN
+ 
+ 
+ END//
+ DELIMITER;
+ procedure -- will execute but not return anything
+ function  --- will return something , have only IN mode
+ triggers  --. based on events ,gets executed after events(insert,update,dlete) 
+ 
+ delimiter //
+ create procedure proc1(IN cust_id int, OUT cname varchar(20))
+ begin
+ select customer_name into cname from customers where customer_id= cust_id;
+ select count(*) from customers;
+ end//
+ delimiter ;
+ 
+ call proc1(1,@cname);   -- for oraclee execute proc(), for mysql call
+ select @cname;  -- @ is bind variable
+ 
+--  create or replace procedure pro_name
+--  alter procedures proc1  drop procedure proc1;
+--  
+  delimiter //
+ create procedure proc2(INOUT timer int, in num int)
+ begin
+ set timer = timer + num;
+ end//
+ delimiter ;
+ 
+ set @timer=1;
+ call proc2(@timer,1);
+ call proc2(@timer,5);
+ select @timer;
+ 
+ ------------------------------------------
+ -- FUNCTION
+ -- if for same set of input u r getting same set of output i.e. deterministic and non-deterministic wherer rsltd can be changed like rand() function
+delimiter $$
+ create function myfun(custname varchar(20), cuid int)
+ returns varchar(20)
+ deterministic
+ begin
+ select customer_name into custname from customers where customer_id=cuid;
+ return custname;
+ end $$
+ delimiter ;
+ 
+ select myfun(@custname,1);
+ 
+  -- 1   retrieve employee by id
+  delimiter //
+  create procedure proc3(IN cust_id int, OUT cname varchar(20),out jobb varchar(10),out salary int)
+ begin
+ -- if u want to reduce these out prameters then declre it within begin e.g.
+ -- DECLARE cname varchar(20);
+ -- DECLARE jobb varchar(10);
+ -- declare salary int;
+ select ename,job, sal into cname,jobb ,salary from emp where empno=cust_id;
+ end//
+ delimiter ;
+ 
+ call proc3(7369,@cname,@jobb,@salary);
+  select @cname,@jobb,@salary;
+ 
+ -- 2
+ delimiter //
+ create procedure p3(in deptid int,out cname varchar(20) )
+ begin
+ select e.ename into cname from emp as e join dept as d  on e.deptno=d.deptno where d.deptno=deptid;
+ end//
+ delimiter ;
+ 
+ call p3(10,@cname);
+ select @cname;
+ 
+ -- 3
+  delimiter //
+ create procedure p4(OUT salary int,in cname varchar(20),in updatesal int )
+ begin
+ select sal into salary from emp where ename=cname;
+ set salary = salary +updatesal;
+ end//
+ delimiter ;
+ 
+ call p4(@salary,'smith',200);
+ select @salary;
+ 
+ -- 4
+  delimiter //
+ create procedure p5(in cname varchar(20) )
+ begin
+ DELETE FROM emp WHERE ename=cname;
+ end//
+ delimiter ;
+ 
+ call p5('smith');
+ 
+ -- 5
+  delimiter //
+ create procedure p7(in depti int, out salary int )
+ begin
+ select sum(e.sal) as s into salary from emp as e join dept as d on e.deptno=d.deptno where d.deptno=depti;
+ end//
+ delimiter ;
+
+call p7(10,@salary);
+select @salary;
+
+-- functions
+-- 1
+delimiter $$
+ create function myfun2(custname varchar(20), cuid int)
+ returns varchar(20) 
+ deterministic
+ begin
+ select ename into custname  from emp where empno=cuid;
+ return custname;
+ end $$
+ delimiter ;
+ 
+  select myfun2(@custname,7499);
+  
+  -- 2
+  delimiter $$
+  create function m3(deptname varchar(10), de int)
+  returns varchar(10)
+  deterministic
+  begin
+  select dname into deptname from dept where deptno=de;
+  return deptname;
+  end $$
+ delimiter ;
+ 
+ select m3(@deptname,10);
+ 
+ -- 3
+   delimiter $$
+  create function m5(avgsal int)
+  returns int
+  deterministic
+  begin
+  select avg(e.sal) as s into avgsal from emp as e join dept as d on e.deptno=d.deptno where d.deptno=30;
+  return avgsal;
+  end $$
+ delimiter ;
+ drop function m5;
+ select m5(@avgsal);
+ 
+ -- 4
+    delimiter $$
+  create function m7(empid int)
+  returns json
+  deterministic
+  begin
+  declare empinfo json;
+  select json_object('empname',ename,'ejob',job)
+  into empinfo from emp where sal=empid;
+  return empinfo;
+  end $$
+ delimiter ;
+  drop function m7;
+ select m7(1600);
+ 
+https://dev.mysql.com/doc/refman/8.4/en/flow-control-statements.html
