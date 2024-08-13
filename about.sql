@@ -590,3 +590,49 @@ delimiter $$
  select m7(1600);
  
 https://dev.mysql.com/doc/refman/8.4/en/flow-control-statements.html
+
+delimiter //
+create procedure itr(C int)
+begin
+	label1:LOOP
+    SET C=C+1;
+    IF C<10 THEN
+    iterate label1;
+    end if;
+    leave label1;
+    end loop label1;
+    set @x=C;
+    end// 
+delimiter ;
+call itr(2);
+select(@x);
+    drop procedure itr;
+    
+-----------------------------------------------------
+-- Triggers
+alter table products add stocks int;
+update products
+set stocks = CASE
+when product_id=101 then 30
+when product_id=102 then 20
+when product_id=103 then 40
+when product_id=104 then 10
+when product_id=105 then 80
+else stocks
+end
+where product_id in (101,102,103,104,105);
+
+
+
+delimiter //
+create trigger afterorderinsert
+after insert on orders
+for each row
+begin
+ update products set stocks=stocks - new.quantity
+ where product_id=new.product_id;
+ end//
+ delimiter ;
+ 
+ insert into orders values (8,4,103,5,'2024-03-05');
+
